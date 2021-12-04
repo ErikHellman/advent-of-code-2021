@@ -6,7 +6,6 @@ import java.util.regex.Pattern
 fun main(args: Array<String>) {
     val lines = loadFile("input.txt")
     val numbersDrawn = lines[0]
-    val boardCount = (lines.size - 1) / 5
     val boards = lines.drop(1)
         .chunked(5)
         .map { board ->
@@ -20,25 +19,35 @@ private fun traverseBoards(
     numbersDrawn: MutableList<Int>,
     boards: List<MutableList<MutableList<Pair<Int, Boolean>>>>
 ) {
+    var lastWinningBoard = boards[0]
+    var lastWinningNumber = -1
+    var mutableBoards = boards
     numbersDrawn.forEach { numberDrawn ->
-        boards.forEach { board ->
+        mutableBoards = mutableBoards.filter { board ->
             updateBoard(numberDrawn, board)
             val didWin = checkBoard(board)
             if (didWin) {
-                println("Board won at $numberDrawn")
-                board.forEach { line ->
-                    println(line)
-                }
-                val sum = sumOfUnmarked(board)
-                println("Result: $sum x $numberDrawn = ${sum * numberDrawn}")
-                return
+                lastWinningBoard = board
+                lastWinningNumber = numberDrawn
             }
+            !didWin
         }
     }
+
+    println("Last board won at $lastWinningNumber")
+    lastWinningBoard.forEach { line ->
+        println(line)
+    }
+    val sum = sumOfUnmarked(lastWinningBoard)
+    println("Result: $sum x $lastWinningNumber = ${sum * lastWinningNumber}")
 }
 
 fun sumOfUnmarked(board: MutableList<MutableList<Pair<Int, Boolean>>>): Int {
-    return board.flatten().fold(0 to false) { acc, pair -> if (!pair.second) { acc.copy(acc.first + pair.first) } else acc }.first
+    return board.flatten().fold(0 to false) { acc, pair ->
+        if (!pair.second) {
+            acc.copy(acc.first + pair.first)
+        } else acc
+    }.first
 }
 
 fun checkBoard(board: MutableList<MutableList<Pair<Int, Boolean>>>): Boolean {
@@ -52,7 +61,7 @@ fun checkBoard(board: MutableList<MutableList<Pair<Int, Boolean>>>): Boolean {
     for (column in board[0].indices) {
         val win = board.indices
             .map { line -> board[line][column].second }
-            .reduce { acc, marked -> acc && marked}
+            .reduce { acc, marked -> acc && marked }
         if (win) return true
     }
 
